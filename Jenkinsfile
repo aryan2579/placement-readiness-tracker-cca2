@@ -38,23 +38,28 @@ pipeline {
             }
         }
 
-        stage('Push Image to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DH_USER',
-                    passwordVariable: 'DH_TOKEN'
-                )]) {
-                    bat '''
-                        docker login -u "%DH_USER%" --password-stdin <<< "%DH_TOKEN%"
-                    '''
-                    bat '''
-                        docker push %IMAGE_NAME%:%BUILD_NUMBER%
-                        docker push %IMAGE_NAME%:latest
-                    '''
-                }
-            }
+       stage('Push Image to Docker Hub') {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-credentials',
+            usernameVariable: 'DH_USER',
+            passwordVariable: 'DH_TOKEN'
+        )]) {
+            bat '''
+                powershell -NoProfile -NonInteractive -Command "$env:DH_TOKEN | docker login -u $env:DH_USER --password-stdin"
+                if errorlevel 1 exit /b 1
+            '''
+
+            bat '''
+                docker push %IMAGE_NAME%:%BUILD_NUMBER%
+                if errorlevel 1 exit /b 1
+                docker push %IMAGE_NAME%:latest
+                if errorlevel 1 exit /b 1
+                docker logout
+            '''
         }
+    }
+}
 
         stage('Deploy to Minikube') {
             steps {
