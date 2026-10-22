@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Placement Readiness Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar"><div><span class="eyebrow">CAMPUS CAREER HUB</span><h1>Placement Readiness Tracker</h1><p>Keep student progress organized, visible, and ready for opportunities.</p></div><a class="button button-light" href="{{ url_for('export_csv') }}">↓ Export CSV</a></header>
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="messages">{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+  <section class="stats">
+    <article class="stat"><span>Total students</span><strong>{{ stats.total }}</strong><small>Registered in tracker</small></article>
+    <article class="stat"><span>Placement eligible</span><strong>{{ stats.eligible }}</strong><small>CGPA of 7.0 or higher</small></article>
+    <article class="stat"><span>Interviewing</span><strong>{{ stats.interviewing }}</strong><small>Currently in interview stage</small></article>
+    <article class="stat"><span>Placed</span><strong>{{ stats.placed }}</strong><small>Successful outcomes</small></article>
+  </section>
+  <section class="panel add-panel"><div class="section-heading"><div><span class="eyebrow">STUDENT DIRECTORY</span><h2>Add a student</h2></div><span class="tag">Eligibility: CGPA ≥ 7.0</span></div>
+    <form method="post" action="{{ url_for('add_student') }}" class="student-form">
+      <label>Roll number<input name="roll_no" placeholder="e.g. CSE2401" required maxlength="30"></label>
+      <label>Full name<input name="name" placeholder="Student name" required maxlength="100"></label>
+      <label>Department<input name="department" placeholder="e.g. Computer Engineering" required maxlength="100"></label>
+      <label>CGPA<input name="cgpa" type="number" min="0" max="10" step="0.01" placeholder="8.25" required></label>
+      <label class="wide">Skills<input name="skills" placeholder="Python, SQL, communication"></label>
+      <label>Placement status<select name="status">{% for s in statuses %}<option>{{ s }}</option>{% endfor %}</select></label>
+      <div class="form-action"><button class="button" type="submit">+ Add student</button></div>
+    </form>
+  </section>
+  <section class="panel directory"><div class="section-heading"><div><span class="eyebrow">YOUR RECORDS</span><h2>Student directory</h2></div><span class="count">{{ students|length }} shown</span></div>
+    <form class="filters" method="get"><input name="q" value="{{ q }}" placeholder="Search name, roll number, department…"><select name="status"><option value="">All statuses</option>{% for s in statuses %}<option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select><button class="button button-dark" type="submit">Filter</button><a class="clear-link" href="{{ url_for('index') }}">Clear</a></form>
+    {% if students %}<div class="table-wrap"><table><thead><tr><th>Student</th><th>Department</th><th>CGPA</th><th>Eligibility</th><th>Placement status</th><th>Action</th></tr></thead><tbody>
+    {% for s in students %}<tr><td><strong>{{ s.name }}</strong><small class="subline">{{ s.roll_no }}</small>{% if s.skills %}<small class="subline">{{ s.skills }}</small>{% endif %}</td><td>{{ s.department }}</td><td><strong>{{ '%.2f'|format(s.cgpa) }}</strong></td><td>{% if eligible(s.cgpa) %}<span class="pill good">Eligible</span>{% else %}<span class="pill warn">Not yet</span>{% endif %}</td><td><form method="post" action="{{ url_for('update_student', student_id=s.id) }}" class="inline-form"><select name="status" aria-label="Placement status for {{ s.name }}">{% for st in statuses %}<option {% if s.status == st %}selected{% endif %}>{{ st }}</option>{% endfor %}</select><button class="mini-button" type="submit">Save</button></form></td><td><form method="post" action="{{ url_for('delete_student', student_id=s.id) }}" onsubmit="return confirm('Delete {{ s.name }}?')"><button class="delete-button" type="submit" aria-label="Delete {{ s.name }}">Delete</button></form></td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<div class="empty"><div class="empty-icon">✦</div><h3>No students found</h3><p>Add your first student above or change your search filters.</p></div>{% endif %}
+  </section>
+  <footer>Student Placement Readiness Tracker <span>•</span> Built for CI/CD deployment practice</footer>
+</main>
+</body></html>

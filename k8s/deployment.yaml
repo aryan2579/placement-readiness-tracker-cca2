@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placement-readiness-tracker
+  labels:
+    app: placement-readiness-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: placement-readiness-tracker
+  template:
+    metadata:
+      labels:
+        app: placement-readiness-tracker
+    spec:
+      containers:
+        - name: web
+          image: DOCKERHUB_USERNAME/placement-readiness-tracker:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5000
+          env:
+            - name: DATABASE_PATH
+              value: /data/students.db
+            - name: SECRET_KEY
+              value: replace-this-for-real-use
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: app-data
+          emptyDir: {}
